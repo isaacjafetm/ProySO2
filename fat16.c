@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <math.h>
+#define min(a, b) ((a) < (b) ? (a) : (b))
 
 typedef struct
 {
@@ -124,94 +128,29 @@ void fat_read_file(FILE *in, FILE *out,
     }
 }
 
-int main(int argc, char *argv[])
+void s()
 {
-    // Read partition data
-    /*FILE * in = fopen("test.img", "rb");
-    int i;
-    PartitionTable pt[4];
-
-    fseek(in, 0x1BE, SEEK_SET); // go to partition table start
-    fread(pt, sizeof(PartitionTable), 4, in); // read all four entries
-
-    for(i=0; i<4; i++) {
-        printf("Partition %d, type %02X\n", i, pt[i].partition_type);
-        printf("  Start sector %08X, %d sectors long\n",
-                pt[i].start_sector, pt[i].length_sectors);
-    }
-
-    fclose(in);
-    return 0;*/
-
-    // Read boot
-    /*FILE * in = fopen("test.img", "rb");
-    int i;
-    PartitionTable pt[4];
-    Fat16BootSector bs;
-
-    fseek(in, 0x1BE, SEEK_SET); // go to partition table start
-    fread(pt, sizeof(PartitionTable), 4, in); // read all four entries
-
-    for(i=0; i<4; i++) {
-        if(pt[i].partition_type == 4 || pt[i].partition_type == 6 ||
-           pt[i].partition_type == 14) {
-            printf("FAT16 filesystem found from partition %d\n", i);
-            break;
-        }
-    }
-
-    if(i == 4) {
-        printf("No FAT16 filesystem found, exiting...\n");
-        return -1;
-    }
-
-    fseek(in, 512 * pt[i].start_sector, SEEK_SET);
-    fread(&bs, sizeof(Fat16BootSector), 1, in);
-
-    printf("  Jump code: %02X:%02X:%02X\n", bs.jmp[0], bs.jmp[1], bs.jmp[2]);
-    printf("  OEM code: [%.8s]\n", bs.oem);
-    printf("  sector_size: %d\n", bs.sector_size);
-    printf("  sectors_per_cluster: %d\n", bs.sectors_per_cluster);
-    printf("  reserved_sectors: %d\n", bs.reserved_sectors);
-    printf("  number_of_fats: %d\n", bs.number_of_fats);
-    printf("  root_dir_entries: %d\n", bs.root_dir_entries);
-    printf("  total_sectors_short: %d\n", bs.total_sectors_short);
-    printf("  media_descriptor: 0x%02X\n", bs.media_descriptor);
-    printf("  fat_size_sectors: %d\n", bs.fat_size_sectors);
-    printf("  sectors_per_track: %d\n", bs.sectors_per_track);
-    printf("  number_of_heads: %d\n", bs.number_of_heads);
-    printf("  hidden_sectors: %d\n", bs.hidden_sectors);
-    printf("  total_sectors_long: %d\n", bs.total_sectors_long);
-    printf("  drive_number: 0x%02X\n", bs.drive_number);
-    printf("  current_head: 0x%02X\n", bs.current_head);
-    printf("  boot_signature: 0x%02X\n", bs.boot_signature);
-    printf("  volume_id: 0x%08X\n", bs.volume_id);
-    printf("  Volume label: [%.11s]\n", bs.volume_label);
-    printf("  Filesystem type: [%.8s]\n", bs.fs_type);
-    printf("  Boot sector signature: 0x%04X\n", bs.boot_sector_signature);
-
-    fclose(in);
-    return 0;*/
-
-    // Read data
-    /*FILE * in = fopen("test.img", "rb");
+    FILE *in = fopen("test.img", "rb");
     int i;
     PartitionTable pt[4];
     Fat16BootSector bs;
     Fat16Entry entry;
 
-    fseek(in, 0x1BE, SEEK_SET); // go to partition table start
+    fseek(in, 0x1BE, SEEK_SET);               // go to partition table start
     fread(pt, sizeof(PartitionTable), 4, in); // read all four entries
 
-    for(i=0; i<4; i++) {
-        if(pt[i].partition_type == 4 || pt[i].partition_type == 6 ||
-           pt[i].partition_type == 14) {
+    for (i = 0; i < 4; i++)
+    {
+        if (pt[i].partition_type == 4 || pt[i].partition_type == 6 ||
+            pt[i].partition_type == 14)
+        {
             printf("FAT16 filesystem found from partition %d\n", i);
             break;
         }
     }
 
-    if(i == 4) {
+    if (i == 4)
+    {
         printf("No FAT16 filesystem found, exiting...\n");
         return -1;
     }
@@ -222,19 +161,21 @@ int main(int argc, char *argv[])
     printf("Now at 0x%X, sector size %d, FAT size %d sectors, %d FATs\n\n",
            ftell(in), bs.sector_size, bs.fat_size_sectors, bs.number_of_fats);
 
-    fseek(in, (bs.reserved_sectors-1 + bs.fat_size_sectors * bs.number_of_fats) *
-          bs.sector_size, SEEK_CUR);
+    fseek(in, (bs.reserved_sectors - 1 + bs.fat_size_sectors * bs.number_of_fats) * bs.sector_size, SEEK_CUR);
 
-    for(i=0; i<bs.root_dir_entries; i++) {
+    for (i = 0; i < bs.root_dir_entries; i++)
+    {
         fread(&entry, sizeof(entry), 1, in);
         print_file_info(&entry);
     }
 
     printf("\nRoot directory read, now at 0x%X\n", ftell(in));
     fclose(in);
-    return 0;*/
+}
 
-    // Leer archivo de texto
+void cat(const char *txt)
+{
+    const char *img = "test.img";
     FILE *in, *out;
     int i, j;
     unsigned long fat_start, root_start, data_start;
@@ -243,25 +184,25 @@ int main(int argc, char *argv[])
     Fat16Entry entry;
     char filename[9] = "        ", file_ext[4] = "   "; // initially pad with spaces
 
-    if (argc < 3)
+    /*if (argc < 3)
     {
         printf("Usage: read_file <fs_image> <FILE.EXT>\n");
         return 0;
-    }
+    }*/
 
-    if ((in = fopen(argv[1], "rb")) == NULL)
+    if ((in = fopen(img, "rb")) == NULL)
     {
-        printf("Filesystem image file %s not found!\n", argv[1]);
+        printf("Filesystem image file %s not found!\n", img);
         return -1;
     }
 
     // Copy filename and extension to space-padded search strings
-    for (i = 0; i < 8 && argv[2][i] != '.' && argv[2][i] != 0; i++)
-        filename[i] = argv[2][i];
-    for (j = 1; j <= 3 && argv[2][i + j] != 0; j++)
-        file_ext[j - 1] = argv[2][i + j];
+    for (i = 0; i < 8 && txt[i] != '.' && txt[i] != 0; i++)
+        filename[i] = txt[i];
+    for (j = 1; j <= 3 && txt[i + j] != 0; j++)
+        file_ext[j - 1] = txt[i + j];
 
-    printf("Opened %s, looking for [%s.%s]\n", argv[1], filename, file_ext);
+    printf("Opened %s, looking for [%s.%s]\n", img, filename, file_ext);
 
     fseek(in, 0x1BE, SEEK_SET);               // go to partition table start
     fread(pt, sizeof(PartitionTable), 4, in); // read all four entries
@@ -314,11 +255,109 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    out = fopen(argv[2], "wb"); // write the file contents to disk
+    out = fopen(txt, "wb"); // write the file contents to disk
     fat_read_file(in, out, fat_start, data_start, bs.sectors_per_cluster * bs.sector_size, entry.starting_cluster, entry.file_size);
     fclose(out);
 
     fclose(in);
+}
+
+long calculateRootDirOffset(const Fat16BootSector *bs) {
+    // Calculate the total size of reserved area including all FATs
+    uint32_t reserved_size = bs->reserved_sectors + bs->number_of_fats * bs->fat_size_sectors;
+
+    // Calculate the size of the root directory area in bytes
+    uint32_t root_dir_size = bs->root_dir_entries * sizeof(Fat16Entry);
+
+    // Calculate the offset of the root directory area
+    return reserved_size * bs->sector_size;
+}
+
+void cd(const char *imageFilePath, const char *dirName) {
+    FILE *imageFile = fopen(imageFilePath, "rb");
+    if (!imageFile) {
+        fprintf(stderr, "Error: Unable to open image file.\n");
+        return;
+    }
+        int dirHistoryIndex = 0;
+
+    FILE *in = fopen("test.img", "rb");
+    int i;
+    PartitionTable pt[4];
+    Fat16BootSector bs;
+    uint16_t currentDirCluster = 0;                // Initialize with the appropriate value
+    char currentPath[256] = "";                    // Initialize with the appropriate value
+    uint16_t dirHistory[256] = {0};                // Initialize with the appropriate value
+    long rootDirOffset = calculateRootDirOffset(&bs); // Implement calculateRootDirOffset function
+
+
+    // Fat16Entry entry;
+
+    if (strcmp(dirName, "..") == 0) {
+        if (!dirHistoryIndex) {
+            fprintf(stderr, "Ya estás en el directorio raíz.\n");
+            return;
+        }
+        else {
+            currentDirCluster = dirHistory[dirHistoryIndex - 1];
+            dirHistoryIndex--;
+            return;
+        }
+    }
+
+    uint32_t fat_start = rootDirOffset - bs.root_dir_entries * sizeof(Fat16Entry);
+    uint32_t data_start = rootDirOffset + (bs.root_dir_entries * sizeof(Fat16Entry));
+    uint32_t cluster_size = bs.sectors_per_cluster * bs.sector_size;
+
+    fseek(in, rootDirOffset, SEEK_SET);
+    Fat16Entry entry;
+    char dirname[9] = "        ";
+
+    char upperDirName[256];
+    strcpy(upperDirName, dirName);
+    for (int i = 0; upperDirName[i]; i++) {
+        upperDirName[i] = toupper(upperDirName[i]);
+    }
+    strncpy(dirname, upperDirName, fmin(8, strlen(upperDirName)));
+
+    for (int i = 0; i < bs.root_dir_entries; i++) {
+        fread(&entry, sizeof(entry), 1, in);
+        if (memcmp(entry.filename, dirname, 8) == 0 && (entry.attributes & 0x10)) {
+            // Encontrado el directorio
+            dirHistory[dirHistoryIndex] = currentDirCluster;
+            dirHistoryIndex++;
+            currentDirCluster = entry.starting_cluster;
+            strcpy(currentPath, dirName);
+            return;
+        }
+    }
+
+    fprintf(stderr, "Directorio no encontrado: %s\n", dirName);
+}
+
+int main(int argc, char *argv[])
+{
+    // Read data
+    if (strcmp(argv[1], "s") == 0)
+    {
+        s();
+    }
+    else if (strcmp(argv[1], "cat") == 0 && strcmp(argv[2], "a.txt") != 0)
+    {
+        cat(argv[2]);
+    }
+    else if (strcmp(argv[1], "mkdir") == 0)
+    {
+    }
+    else if (strcmp(argv[1], "cat") == 0 && strcmp(argv[2], "a.txt") == 0)
+    {
+    }
+    else if (strcmp(argv[1], "cd") == 0)
+    {
+        
+    }
+
+    // Leer archivo de texto
 
     return 0;
 }
